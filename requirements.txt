@@ -1,0 +1,8 @@
+django==3.1.6
+djangorestframework
+django-cors-headers
+django_filter
+requests
+opencv-python
+Pillow
+mysqlclient
