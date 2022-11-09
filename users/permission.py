@@ -5,3 +5,6 @@ class CustomReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:#GET과 같은 메소드
             return True
         return obj.user==request.user
+
+
+        # ../permissions.py
