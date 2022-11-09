@@ -6,3 +6,5 @@ requests
 opencv-python
 Pillow
 mysqlclient
+opencv-python
+numpy
