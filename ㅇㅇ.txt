@@ -1,0 +1,12 @@
+select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id ={request.user.pk} group by plant_id ) as b on gallery_photo.date = b.date
+
+수확 //
+시간()&크기()
+5~6cm, 한계치는 화면,
+물주기
+
+알고리즘 함수
+ratio=>화면비율
+분석=> 수확 예정 시기(대충), 3개 이상 일시
+
+

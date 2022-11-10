@@ -2,3 +2,5 @@
 /__pycache__
 *.jpg
 my_settings.py
+*.txt
+*.png
