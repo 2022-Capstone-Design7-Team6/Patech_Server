@@ -55,14 +55,14 @@ def homepage(request):
     serializer_profile = ProfileSerializer(Profile.objects.get(user=request.user))
     sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc limit 5'
     images = Photo.objects.raw(sql)
-    serializer_image = RecentPlantSerializer(images,many=True)
+    serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
     return Response({'nickname':serializer_profile.data,'img_list':serializer_image.data})
 
 @api_view(['GET'])
 def plantlist(request):
     sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
     images = Photo.objects.raw(sql)
-    serializer_image = RecentPlantSerializer(images,many=True)
+    serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
     return Response(serializer_image.data)
 
 
@@ -77,7 +77,7 @@ class PlantPageAPIVIEW(APIView):
         photos = Photo.objects.filter(plant=plant_id)
         serializer_plant = HomePage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
-        serializer_timeline= PhotoTimelineSerializer(photos,many=True)
+        serializer_timeline= PhotoTimelineSerializer(photos,many=True,context={'request':request})
         return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
 
 

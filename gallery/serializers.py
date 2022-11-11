@@ -19,20 +19,17 @@ class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photo
         fields = ("pk","plant","image","event","text","date","size","length","weight") 
-
+class PhotoCreateSerializer(serializers.ModelSerializer):
+    plant= PlantSerializer(read_only=True)
+    class Meta:
+        model = Photo
+        fields = ("plant","image","text","event","date","size","length","weight")
 
 class PhotoTimelineSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)
     class Meta:
         model = Photo
         fields = ("pk","image","event","text","date") 
-
-
-class PhotoCreateSerializer(serializers.ModelSerializer):
-    plant= PlantSerializer(read_only=True)
-    class Meta:
-        model = Photo
-        fields = ("plant","image","text","event","date","size","length","weight")
 
 
 class HomePage_PlantSerializer(serializers.ModelSerializer):
