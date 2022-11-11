@@ -20,7 +20,7 @@ class Photo(models.Model):
     image = models.ImageField(upload_to ='post/',default='default.jpg') # 사진 
     text = models.CharField(max_length=200,null=True) # 문자
     date = models.DateTimeField(default=timezone.now) # 날짜
-    event = models.CharField(max_length=6,null=True) # 이벤트 100 물주기,010 수확,001 분갈이
+    event = models.IntegerField(null=True) # 이벤트 100 물주기,010 수확,001 분갈이
     size = models.FloatField(default=0) # 계산 면적
     length = models.FloatField(default=0) #계산 길이
     weight = models.FloatField(default=0) #계산 무게
