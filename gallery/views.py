@@ -40,7 +40,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
         # 데이터 저장 전에 size 계산 한 뒤 투입
         plant=Plant.objects.get(id=self.request.data.get('plant'))
         img = convert2NdArray(self.request.FILES['image'])
-        msize = paPic(img,0.4,plant.pot_size)
+        msize = paPic(img,plant.pot_ratio,plant.pot_size)
         # 수확 예정 정보 계산 필요 
         # plant 값 update;
         # 수확 했을 경우에는 
