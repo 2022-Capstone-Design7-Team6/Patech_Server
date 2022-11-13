@@ -86,9 +86,9 @@ def set_price():
                             break
                     pricelist[1]=vege["dpr"+str(r_d)]
                     datelist[1]=delay_day[r_d-1]
-    price_data0 = Price(species=0,price=pricelist[0],date=(datetime.today().date()-timedelta(n+datelist[0]))) 
+    price_data0 = Price(species=0,price=int(pricelist[0].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[0]))) 
     price_data0.save()
-    price_data1 = Price(species=1,price=pricelist[1],date=(datetime.today().date()-timedelta(n+datelist[1]))) 
+    price_data1 = Price(species=1,price=int(pricelist[1].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[1]))) 
     price_data1.save()
 
 
@@ -104,7 +104,6 @@ def homepage(request):
     #대파가격/쪽파가격
     # price_data0 = Price(species=0,price=1,date=datetime.today().date()) 
     # price_data0.save()
-
     return Response({'nickname':serializer_profile.data,'img_list':serializer_image.data})
 
 @api_view(['GET'])
