@@ -1,7 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from users.models import Profile
-from .models import Plant, Photo
+from .models import Plant, Photo, Price
 from .permissions import CustomOnly,IsOwner
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
@@ -15,6 +15,9 @@ from rest_framework.decorators import api_view,permission_classes
 from users.serializers import ProfileSerializer
 
 from rest_framework.response import Response
+from datetime import datetime,timedelta
+
+
 class PlantViewSet(viewsets.ModelViewSet):
     queryset = Plant.objects.all()
     permission_classes = [CustomOnly]
@@ -49,13 +52,59 @@ class PhotoViewSet(viewsets.ModelViewSet):
         # 사이즈 추가 필요
         serializer.save(author=self.request.user,size=msize)
 # Create your views here.
+import requests
+import json
+
+def set_price():
+    pricelist=[0,0]
+    datelist=[0,0]
+    delay_day=[0,1,7,14,30]
+    n = 0
+    resp =""
+    while True:
+        URL = 'https://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList&p_product_cls_code=02&p_itemcode=246&p_country_code=1101&p_regday='+(datetime.today()-timedelta(n)).strftime("%Y-%m-%d")+'&p_convert_kg_yn=Y&p_item_category_code=200&p_cert_key=50bda903-19bc-4821-8cae-de61be81bc71&p_cert_id=2923&p_returntype=json'
+        resp =  requests.get(URL)
+        if(resp.status_code==000 or n>7):
+            break
+        n += 1
+    json_data = json.loads(resp.text)
+    for vege in json_data["data"]["item"]:
+        if vege["item_code"]=="246" and vege["rank"]=="상품":
+                if vege["kind_name"]=="대파(1kg)":
+                    r_d=1
+                    while vege["dpr"+str(r_d)] == '-':
+                        r_d+=1
+                        if r_d>5: 
+                            break
+                    pricelist[0]=vege["dpr"+str(r_d)]
+                    datelist[0]=delay_day[r_d-1]
+                if vege["kind_name"]=="쪽파(1kg)":
+                    r_d=1
+                    while vege["dpr"+str(r_d)] == '-':
+                        r_d+=1
+                        if r_d>5: 
+                            break
+                    pricelist[1]=vege["dpr"+str(r_d)]
+                    datelist[1]=delay_day[r_d-1]
+    price_data0 = Price(species=0,price=pricelist[0],date=(datetime.today().date()-timedelta(n+datelist[0]))) 
+    price_data0.save()
+    price_data1 = Price(species=1,price=pricelist[1],date=(datetime.today().date()-timedelta(n+datelist[1]))) 
+    price_data1.save()
+
+
+
 
 @api_view(['GET'])
 def homepage(request):
-    serializer_profile = ProfileSerializer(Profile.objects.get(user=request.user))
+    profile = Profile.objects.get(user=request.user)
+    serializer_profile = ProfileSerializer(profile)
     sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc limit 5'
     images = Photo.objects.raw(sql)
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
+    #대파가격/쪽파가격
+    # price_data0 = Price(species=0,price=1,date=datetime.today().date()) 
+    # price_data0.save()
+
     return Response({'nickname':serializer_profile.data,'img_list':serializer_image.data})
 
 @api_view(['GET'])

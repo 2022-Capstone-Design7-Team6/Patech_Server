@@ -2,6 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+class Price(models.Model):
+    species = models.IntegerField(primary_key=True)
+    price = models.IntegerField(default=0)
+    date = models.DateField(default=timezone.now)
 class Plant(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,related_name = 'plants') # 작성자
     plant_name = models.CharField(max_length=20) # 식물 닉네임

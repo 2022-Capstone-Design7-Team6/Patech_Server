@@ -4,6 +4,7 @@ from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
+from .permission import CustomReadOnly
 class RegisterView(generics.CreateAPIView):
     queryset= User.objects.all()
     serializer_class= RegisterSerializer
@@ -21,6 +22,7 @@ class LoginView(generics.GenericAPIView):
 from .models import Profile
 
 class ProfileView(generics.RetrieveUpdateAPIView):
+    permission_classes = [CustomReadOnly]
     queryset = Profile.objects.all()
     filter_backends = [DjangoFilterBackend]
     serializer_class = ProfileSerializer

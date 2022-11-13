@@ -19,18 +19,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         validators=[validate_password],
     )
 
-    password2 = serializers.CharField(write_only=True, required=True)
-
     class Meta:
         model = User
-        fields = ('id','username','password','password2',)
+        fields = ('id','username','password')
 
-    def validate(self,data):
-        if data['password']!=data['password2']:
-            raise serializers.ValidationError(
-        {"password":"password fields didn't match"}
-        )
-        return data
 
     def create(self,validated_data):
         user = User.objects.create_user(
@@ -58,11 +50,6 @@ class LoginSerializer(serializers.Serializer):
     {"error":"Unable to log in with provided credentials."})
 
 from .models import Profile
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = ("nickname",)
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:

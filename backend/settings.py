@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'users',
     'gallery',
-    'django_filters'
+    'django_filters',
+    'django_crontab',
 ]
 
 REST_FRAMEWORK = {
@@ -137,3 +138,8 @@ MEDIA_ROOT= os.path.join(BASE_DIR,'media')
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CRONJOBS = [
+    ('*/5 * * * *', 'gallery.view.set_price','>> '+os.path.join(BASE_DIR, 'config/log/set_price.log')+' 2>&1 ')
+]
+    # *(몇분) *(몇시) *(몇일) *(몇월) *(몇주) *(몇년)
