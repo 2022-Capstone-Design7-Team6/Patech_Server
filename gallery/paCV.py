@@ -7,13 +7,16 @@ from urllib.request import urlopen
 #2. 파가 서로 겹치지 않을수록 좋음
 #3. ratio는 가급적 작을 수록 좋음(아래로부터 30%정도가 적당너무 클시 수확을 하지 않아도 되는 시기에 수확을 해야할 수도 있음)
 #4. 사진은 항상 세로로 (높이가 길게) 찍는다
-
+import base64
 def convert2NdArray(f):  #change type to ndarray and dtype is np.uint8  !!!타입을 알아야함
+
 
     myfile = f.read()
     imageBGR = cv2.imdecode(np.frombuffer(myfile , np.uint8), cv2.IMREAD_UNCHANGED)
-    # imageRGB = cv2.cvtColor(imageBGR , cv2.COLOR_BGR2RGB)
-    return imageBGR
+    imageRGB = cv2.cvtColor(imageBGR,cv2.COLOR_BGR2RGB)
+    # img_2 = Image.fromarray(imageRGB) # NumPy array to PIL image
+    # img_2.show()
+    return imageRGB
 
 def potTopDrawer(img):#사용자에게 직접 받는것이 빠를듯 화분 맨위의 위치와 ratio 파악  !!!여기서 하면 상당히 비효율적
     #중앙하단에 범위를 설정하여 grabcut을 진행! 

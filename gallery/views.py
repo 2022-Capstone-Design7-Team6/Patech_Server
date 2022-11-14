@@ -5,14 +5,14 @@ from .models import Plant, Photo, Price
 from .permissions import CustomOnly,IsOwner
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
-        PhotoTimelineSerializer
+        PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer
 
 from .paCV import paPic,convert2NdArray
 from rest_framework.views    import APIView
 from rest_framework.authtoken.models  import Token
 
 from rest_framework.decorators import api_view,permission_classes
-from users.serializers import ProfileSerializer
+from users.serializers import ProfileSerializer,RankProfileSerializer
 
 from rest_framework.response import Response
 from datetime import datetime,timedelta
@@ -29,6 +29,7 @@ class PlantViewSet(viewsets.ModelViewSet):
         return PlantCreateSerializer
     def perform_create(self,serializer):
         serializer.save(author=self.request.user)
+
 
 class PhotoViewSet(viewsets.ModelViewSet):
     queryset = Photo.objects.all()
@@ -55,19 +56,34 @@ class PhotoViewSet(viewsets.ModelViewSet):
 import requests
 import json
 
+def rank_update():
+    profiles = Profile.objects.all()
+    for profile in profiles:
+        profile.total_gain=profile.depa_weight*Price.objects.get(species=0).price\
+            +profile.jjokpa_weight*Price.objects.get(species=1).price
+
+    profiles = sorted(profiles, key= lambda x: x.total_gain,reverse=True)
+    for i,profile in enumerate(profiles,start=1):
+        profile.rank = i
+
+    Profile.objects.bulk_update(profiles,["total_gain","rank"])
+
 def set_price():
     pricelist=[0,0]
     datelist=[0,0]
     delay_day=[0,1,7,14,30]
     n = 0
     resp =""
+    json_data = ""
     while True:
-        URL = 'https://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList&p_product_cls_code=02&p_itemcode=246&p_country_code=1101&p_regday='+(datetime.today()-timedelta(n)).strftime("%Y-%m-%d")+'&p_convert_kg_yn=Y&p_item_category_code=200&p_cert_key=50bda903-19bc-4821-8cae-de61be81bc71&p_cert_id=2923&p_returntype=json'
+        URL = 'https://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList&p_product_cls_code=02&p_country_code=1101&p_regday='\
+            +(datetime.today()-timedelta(n)).strftime("%Y-%m-%d")+'&p_convert_kg_yn=Y&p_item_category_code=200&p_cert_key=50bda903-19bc-4821-8cae-de61be81bc71&p_cert_id=2923&p_returntype=json'
         resp =  requests.get(URL)
-        if(resp.status_code==000 or n>7):
+        json_data = json.loads(resp.text)
+        if type(json_data["data"])==dict or n>5 :
             break
         n += 1
-    json_data = json.loads(resp.text)
+
     for vege in json_data["data"]["item"]:
         if vege["item_code"]=="246" and vege["rank"]=="상품":
                 if vege["kind_name"]=="대파(1kg)":
@@ -86,10 +102,17 @@ def set_price():
                             break
                     pricelist[1]=vege["dpr"+str(r_d)]
                     datelist[1]=delay_day[r_d-1]
-    price_data0 = Price(species=0,price=int(pricelist[0].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[0]))) 
-    price_data0.save()
-    price_data1 = Price(species=1,price=int(pricelist[1].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[1]))) 
-    price_data1.save()
+    
+    if Price.objects.get(species=0).date<(datetime.today().date()-timedelta(n+datelist[0])):
+        price_data0 = Price(species=0,price=int(pricelist[0].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[0]))) 
+        price_data0.save()
+    if Price.objects.get(species=1).date<(datetime.today().date()-timedelta(n+datelist[1])):
+        price_data1 = Price(species=1,price=int(pricelist[1].replace(",","")),date=(datetime.today().date()-timedelta(n+datelist[1]))) 
+        price_data1.save()
+
+
+    #시세에 따른 재계산=>정렬&update
+    rank_update()
 
 
 
@@ -104,7 +127,19 @@ def homepage(request):
     #대파가격/쪽파가격
     # price_data0 = Price(species=0,price=1,date=datetime.today().date()) 
     # price_data0.save()
-    return Response({'nickname':serializer_profile.data,'img_list':serializer_image.data})
+    # set_price()
+    return Response({'nickname':profile.nickname,'patech_indicator':cvtmoney(profile.total_gain),'img_list':serializer_image.data})
+
+def cvtmoney(money):
+    item_list=['-','교통비🚃','붕어빵⛄️','아메리카노 1잔☕️','참치김밥🐟',\
+    '햄버거 세트🍔','떡볶이 1인분🍽','영화 티켓🎟','치킨 1마리🍗','한우 1인분🥩',\
+        '제주도행 비행기표✈️','에어팟 맥스🎧','맥북 프로💻']
+    
+    price_list=[0,1200,3000,4000,5000,7000,10000,14000,20000,30000,70000,690000,2500000]
+    for i,price in enumerate(price_list,start=-1):
+        if money<price:
+            return item_list[i]
+    return item_list[-1]
 
 @api_view(['GET'])
 def plantlist(request):
@@ -114,6 +149,43 @@ def plantlist(request):
     return Response(serializer_image.data)
 
 
+@api_view(['POST'])
+def harvest(request):
+    plant=Plant.objects.get(id=request.data.get('plant'))
+
+    # print("still working")
+    # img0 = convert2NdArray(request.FILES['beforeimage'])
+    # m0size = paPic(img0,plant.pot_ratio,plant.pot_size)
+    
+    serializer0=BPhotoCreateSerializer(data = request.data,context={'request':request})
+    # serializert=PhotoCreateSerializer(data = request.data,image=request.data.get("beforeimage"))
+    m0size=0
+    m1size=0
+    if serializer0.is_valid():
+        img0 = convert2NdArray(request.FILES['beforeimage'])
+        m0size = paPic(img0,plant.pot_ratio,plant.pot_size)
+        serializer0.save(author=request.user,plant =plant,size=m0size)
+    print(serializer0.data)
+    print(type(serializer0.data.get("beforeimage")))
+    serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
+    if serializer1.is_valid():
+        img1 = convert2NdArray(request.FILES['afterimage'])
+        m1size = paPic(img1,plant.pot_ratio,plant.pot_size)
+        serializer1.save(author=request.user,plant =plant,size=m1size)
+
+
+    profile= Profile.objects.get(user=request.user)
+    if(plant.plant_species==0):
+        profile.depa_weight+=(m0size-m1size)
+    elif(plant.plant_species==1):
+        profile.jjokpa_weight+=(m0size-m1size)
+    elif(plant.plant_species==2):
+        profile.onion_weight+=(m0size-m1size)
+    profile.save()
+    rank_update()
+    return Response({"size_dif":m0size-m1size,"money":(m0size-m1size)*(Price.objects.get(species=plant.plant_species).price)})
+    
+   
 
 class PlantPageAPIVIEW(APIView):
     permission_classes = [IsOwner]
@@ -127,6 +199,16 @@ class PlantPageAPIVIEW(APIView):
         serializer_graph = GraphSerializer(photos,many=True)
         serializer_timeline= PhotoTimelineSerializer(photos,many=True,context={'request':request})
         return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
+
+class PatechRank(APIView):
+    def get(self,request):
+        #최대개수 20개 제한
+        profile_list = Profile.objects.all().order_by('-total_gain')[:20]
+        serializer_profiles=RankProfileSerializer(profile_list,many=True)
+        user_profile = Profile.objects.get(user=request.user)
+        serializer_user_profiles =RankProfileSerializer(user_profile)
+        serializer_price = PriceSerializer(Price.objects.all(), many=True)
+        return Response({'user':serializer_user_profiles.data,'price':serializer_price.data,'list':serializer_profiles.data})
 
 
 # 가장 최근 식물 2개

@@ -1,8 +1,13 @@
 from rest_framework import serializers
 from users.serializers import ProfileSerializer
-from .models import Plant,Photo
+from .models import Plant,Photo,Price
 from django.utils import timezone
 
+
+class PriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Price
+        fields = ("species", "price","date")
 class PlantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plant
@@ -19,11 +24,28 @@ class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photo
         fields = ("pk","plant","image","event","text","date","size","length","weight") 
+
 class PhotoCreateSerializer(serializers.ModelSerializer):
     plant= PlantSerializer(read_only=True)
     class Meta:
         model = Photo
         fields = ("plant","image","text","event","date","size","length","weight")
+
+
+class BPhotoCreateSerializer(serializers.ModelSerializer):
+    plant = PlantSerializer(read_only=True)
+    beforeimage = serializers.ImageField(source="image",required=True)
+    class Meta:
+        model = Photo
+        fields = ("plant","beforeimage","text","event","date","size","length","weight")
+
+class APhotoCreateSerializer(serializers.ModelSerializer):
+    plant = PlantSerializer(read_only=True)
+    afterimage = serializers.ImageField(source="image",required=True)
+    class Meta:
+        model = Photo
+        fields = ("plant","afterimage","text","event","date","size","length","weight")
+
 
 class PhotoTimelineSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)

@@ -55,3 +55,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ("nickname",)
+
+
+class RankProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ("pk","rank","nickname","total_gain")
+
