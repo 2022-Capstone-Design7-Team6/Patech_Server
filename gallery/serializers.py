@@ -25,6 +25,16 @@ class PhotoSerializer(serializers.ModelSerializer):
         model = Photo
         fields = ("pk","plant","image","event","text","date","size","length","weight") 
 
+class SimplePhotoSerializer(serializers.ModelSerializer):
+    # plant= PlantSerializer(read_only=True)
+    my_date = serializers.SerializerMethodField('removetime')
+    def removetime(self, photo):
+      return photo.date.date() 
+    class Meta:
+        model = Photo
+        fields = ("image","my_date") 
+
+
 class PhotoCreateSerializer(serializers.ModelSerializer):
     plant= PlantSerializer(read_only=True)
     class Meta:

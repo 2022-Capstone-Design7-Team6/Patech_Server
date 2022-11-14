@@ -15,13 +15,6 @@ class CustomOnly(permissions.BasePermission):
 
 
 class IsOwner(permissions.BasePermission):
-    def has_permission(self,request,view):
-        if request.method == 'GET':#GET과 같은 메소드
-            return True
-        return request.user.is_authenticated
-
-
-
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
             if request.user == obj.author:

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from .views import PlantViewSet, PhotoViewSet,homepage,\
-    PlantPageAPIVIEW,plantlist,PatechRank,harvest
+    PlantPageAPIVIEW,plantlist,PatechRank,harvest,getphotos,plantnamecheck
 
 router = routers.SimpleRouter()
 router.register('plants',PlantViewSet)
@@ -14,6 +14,8 @@ urlpatterns = [
     path('rank/',PatechRank.as_view()),
     path('plantpage/',PlantPageAPIVIEW.as_view()),
     path('harvest/',harvest),
+    path('getphotos/',getphotos),
+    path('plantnamecheck/',plantnamecheck),
     # path('plantpage/',plantpage),
     path('',include(router.urls)),
 ]

@@ -5,7 +5,8 @@ from .models import Plant, Photo, Price
 from .permissions import CustomOnly,IsOwner
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
-        PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer
+        PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer,\
+            SimplePhotoSerializer
 
 from .paCV import paPic,convert2NdArray
 from rest_framework.views    import APIView
@@ -146,6 +147,20 @@ def plantlist(request):
     sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
     images = Photo.objects.raw(sql)
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
+    return Response(serializer_image.data)
+from rest_framework import status
+@api_view(['GET'])
+def plantnamecheck(request):
+    true_check = Plant.objects.filter(author=request.user).filter(plant_name=request.data.get("plant_name"))
+    if true_check.exists():
+        return Response(status=status.HTTP_226_IM_USED)
+    else:
+        return Response(status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def getphotos(request):
+    photos = Photo.objects.filter(plant=request.data.get('plant')).order_by("-date")[:5]
+    serializer_image = SimplePhotoSerializer(photos,many=True,context={'request':request})
     return Response(serializer_image.data)
 
 
