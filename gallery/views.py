@@ -181,14 +181,15 @@ def harvest(request):
         img0 = convert2NdArray(request.FILES['beforeimage'])
         m0size,m0height,m0weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
         serializer0.save(author=request.user,plant =plant,size=m0size,length=m0height,weight=m0weight)
-    print(serializer0.data)
-    print(type(serializer0.data.get("beforeimage")))
+    else:
+        Response(status=status.HTTP_204_NO_CONTENT)
     serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
     if serializer1.is_valid():
         img1 = convert2NdArray(request.FILES['afterimage'])
         m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
         serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
-
+    else:
+        Response(status=status.HTTP_204_NO_CONTENT)
 
     profile= Profile.objects.get(user=request.user)
     if(plant.plant_species==0):
@@ -199,7 +200,7 @@ def harvest(request):
         profile.onion_weight+=(m0weight-m1weight)
     profile.save()
     rank_update()
-    return Response({"size_dif":m0weight-m1weight,"money":int((m0weight-m1weight)*(Price.objects.get(species=plant.plant_species).price))})
+    return Response({"size_dif":m0weight-m1weight,"money":int((m0weight-m1weight)*(Price.objects.get(species=plant.plant_species).price))},status=status.HTTP_200_OK)
     
    
 
