@@ -62,6 +62,11 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
+    ###image save###
+    newImg = cv2.bitwise_and(original, original, mask = green_mask)
+    im = Image.fromarray(newImg)
+    im.save("mask.jpeg")
+
     
     #calculate area ,height, weight
     countGreenPixel=0
