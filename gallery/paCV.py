@@ -55,12 +55,12 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     green_mask[pxH-potTopPixel:, :]=0
     
     #if you want to see output..2
-    newImg = cv2.bitwise_and(original, original, mask = green_mask)
-    cv2.namedWindow("AfterImg",0)
-    cv2.resizeWindow("AfterImg", 500, 700)
-    cv2.imshow('AfterImg',newImg)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # newImg = cv2.bitwise_and(original, original, mask = green_mask)
+    # cv2.namedWindow("AfterImg",0)
+    # cv2.resizeWindow("AfterImg", 500, 700)
+    # cv2.imshow('AfterImg',newImg)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     
     #calculate area ,height, weight
