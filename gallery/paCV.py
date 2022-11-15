@@ -18,85 +18,93 @@ def convert2NdArray(f):  #change type to ndarray and dtype is np.uint8  !!!타�
     # img_2.show()
     return imageRGB
 
-def potTopDrawer(img):#사용자에게 직접 받는것이 빠를듯 화분 맨위의 위치와 ratio 파악  !!!여기서 하면 상당히 비효율적
-    #중앙하단에 범위를 설정하여 grabcut을 진행! 
-    mask = np.zeros(img.shape[:2],np.uint8)
-    
-    bgdModel = np.zeros((1,65),np.float64)
-    fgdModel = np.zeros((1,65), np.float64)
-    
-    rect = (1,1,665,344)
-    cv2.grabCut(img,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_RECT)
-    
-    mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
-    img = img*mask2[:,:,np.newaxis]
-    
-    tmp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-    b,g,r = cv2.split(img)
-    rgba = [b,g,r,alpha]
-    newImg = cv2.merge(rgba,4)
-    
-    cv2.imshow('wow',newImg)
-    cv2.waitKey(0)
-    
-    top=100
-    ratio = 100 #pot real height and picture heigth ratio
-    return newImg, top, ratio
 
-def picTrans(img):#사진을 반투명하게 만듬 완료
-    transparency = 127 #min 0. max 255
-    b, g, r = cv2.split(img)
-    mask=np.full((len(img),len(img[0])),transparency,dtype=np.uint8)
-    newImg = cv2.merge([b, g, r, mask], 4)
-    # write as png which keeps alpha channel 
-    #cv2.imwrite('result.png', newImg)
-    return newImg
-
-def paPic(img,ratio, potTopCentimeter):#파사진을 찍었을 때 맨위 위치의 위로 파란색부분을 찾아 넓이계산
-    print("WTF")
-    print(type(img))
-    potTopPixel =int(len(img)*ratio)
+#상태 : 업그레이드 중 두께 가중치 추가?
+#기능 : 파 넓이 계산
+#입력 : image=ndarray , pakind=종류(대파=0,쪽파=1,양파=2) ,ratio=0~1, potTopCentimeter=cm
+#출력 : [넓이(cm^2), 높이(cm), 무게(g)]
+def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨위 위치의 위로 파란색부분을 찾아 넓이계산
+    area2weight = [0.02,0.01,0.01]#대파, 쪽파, 양파
+    pxH = len(img)
+    pxW = len(img[0])
+    potTopPixel =int(pxH*ratio)
     #RGB로 특정색을 추출하면 어두운 사진에서 정확도가 떨어짐
     #HSV로 진행. H가 색깔, S가 채도(높으면 선명해짐), V가 명도(낮으면 어두어짐)
-    original = img #출력원할떄..
+    
+    #if you want to see output..1
+    original = img 
+    
     newImg = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     #명도 high case 
-    lower_green = (35, 25, 100)
-    upper_green = (85, 255, 255)
+    lower_green = (30, 25, 25)
+    upper_green = (90, 120, 255)
     green_mask = cv2.inRange(newImg, lower_green, upper_green)
     #채도 high case
-    lower_green = (35, 100, 25)
-    upper_green = (85, 255, 255)
+    lower_green = (30, 25, 25)
+    upper_green = (90, 255, 120)
     green_mask2 = cv2.inRange(newImg, lower_green, upper_green)
+    #색조 high case
+    lower_green = (90, 50, 120)
+    upper_green = (95, 70, 170)
+    green_mask3 = cv2.inRange(newImg, lower_green, upper_green)
+    
     #여러케이스를 합함
-    green_mask+=green_mask2
-    #top 아래는 모두 0으로 바꿈
-    green_mask[len(img)-potTopPixel:, :]=0
-    
-    # cv2.imwrite('result5.png', green_mask)
-    #if you want to see output..
-    newImg = cv2.bitwise_and(original, original, mask = green_mask)
-    # cv2.imwrite('result4.png', newImg)
+    green_mask=green_mask+green_mask2+green_mask3
 
-    #calculate area
-    countPixel=np.count_nonzero(green_mask)
-    countAllPixel = len(img)*len(img[0])
-    heightCM = potTopCentimeter/ratio
-    widthCM= heightCM*len(img[0])/len(img)
-    allArea = heightCM*widthCM
-    print(countPixel*allArea/countAllPixel)
-    return round(countPixel*allArea/countAllPixel,1)
+    #top 아래는 모두 0으로 바꿈
+    green_mask[pxH-potTopPixel:, :]=0
     
-def paHarv(before_img,after_img,ratio, potTopCentimeter):#수확시, 두 파사진이 동시에 왔을 때 차를 반환 완료
-    areaDiff= paPic(after_img,ratio, potTopCentimeter)-paPic(before_img,ratio, potTopCentimeter) 
-    if areaDiff<=0 :
+    #if you want to see output..2
+    # newImg = cv2.bitwise_and(original, original, mask = green_mask)
+    # cv2.namedWindow("AfterImg",0)
+    # cv2.resizeWindow("AfterImg", 500, 700)
+    # cv2.imshow('AfterImg',newImg)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    
+    #calculate area ,height, weight
+    countGreenPixel=0
+    heightRow = 0
+    for row in range(pxH):
+        temp  =np.count_nonzero(green_mask[row])
+        if heightRow==0 and temp >=3: #1 could be not accurate
+            heightRow = row
+        countGreenPixel+=temp
+    countAllPixel = pxH*pxW
+    heightCM = topCentimeter/ratio
+    widthCM= heightCM*pxW/pxH
+    allArea = heightCM*widthCM
+    greenArea = round(allArea*countGreenPixel/countAllPixel,1)
+    
+    heightRows = pxH - heightRow-int(ratio*pxH)
+    height = round(heightCM*heightRows/pxH,1)
+    
+    weight = round(greenArea*area2weight[paType],1)
+    
+    
+    
+    print("This is ok")
+    return [greenArea,height,weight]
+    
+#상태 : 구현완료
+#기능 : 두 이미지 파 넓이 차이 계산
+#입력 : before_image=ndarray , after_image=ndarray , ratio=0~1, potTopCentimeter=cm
+#출력 : 두 이미지 [넓이(cm^2), 높이(cm), 무게(g)] 의 차
+def paHarvest(before_img,after_img,paType,ratio, potTopCentimeter):#수확시, 두 파사진이 동시에 왔을 때 차를 반환 완료
+    diff= [round(a - b,1) for a, b in zip(paImg2AHW(after_img,paType, ratio, potTopCentimeter), paImg2AHW(before_img,paType,ratio, potTopCentimeter) )]
+    if diff[0]<0 :
         return 'ERROR, pa is grown..'
     else :
-        return areaDiff
+        return diff
     
-def drawGraph(areaList):#넓이가 저장된 list 에 대해 graph 로 반환 !!!근데 이걸 만들어서 줘도 되나..?
-    #areaList contain pot's area
-    newImg = areaList
-    #return graph image?
-    return newImg
+#상태 : 구현전
+#기능 : 성장 곡선 예측, 수확시기 예측
+#입력 : heightList = [[datetime1,height1],[datetime2,height2],[datetime3,height3]...]
+#출력 : 수확 시기...?
+def harvPredict(heightList):
+    #[[datatime,50]]
+    #y = D(e^x-1)
+    #y' = De^x
+    #
+    return True

@@ -10,7 +10,7 @@ class Profile(models.Model):
     jjokpa_weight = models.FloatField(default=0)
     onion_weight = models.FloatField(default=0)
     rank = models.IntegerField(default=0)
-    total_gain = models.FloatField(default=0) 
+    total_gain = models.IntegerField(default=0) 
 
 @receiver(post_save,sender=User)
 def create_user_profile(sender,instance,created,**kwangs):

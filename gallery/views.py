@@ -8,7 +8,7 @@ from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,
         PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer,\
             SimplePhotoSerializer
 
-from .paCV import paPic,convert2NdArray
+from .paCV import paImg2AHW,convert2NdArray
 from rest_framework.views    import APIView
 from rest_framework.authtoken.models  import Token
 
@@ -45,14 +45,14 @@ class PhotoViewSet(viewsets.ModelViewSet):
         # 데이터 저장 전에 size 계산 한 뒤 투입
         plant=Plant.objects.get(id=self.request.data.get('plant'))
         img = convert2NdArray(self.request.FILES['image'])
-        msize = paPic(img,plant.pot_ratio,plant.pot_size)
+        msize,mheight,mweight = paImg2AHW(img,plant.plant_species,plant.pot_ratio,plant.pot_size)
         # 수확 예정 정보 계산 필요 
         # plant 값 update;
         # 수확 했을 경우에는 
         # user.profile 값 변경
         change = 0
         # 사이즈 추가 필요
-        serializer.save(author=self.request.user,size=msize)
+        serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
 # Create your views here.
 import requests
 import json
@@ -60,8 +60,9 @@ import json
 def rank_update():
     profiles = Profile.objects.all()
     for profile in profiles:
-        profile.total_gain=profile.depa_weight*Price.objects.get(species=0).price\
-            +profile.jjokpa_weight*Price.objects.get(species=1).price
+        profile.total_gain=int(profile.depa_weight*Price.objects.get(species=0).price\
+            +profile.jjokpa_weight*Price.objects.get(species=1).price\
+                +profile.onion_weight*Price.objects.get(species=2).price)
 
     profiles = sorted(profiles, key= lambda x: x.total_gain,reverse=True)
     for i,profile in enumerate(profiles,start=1):
@@ -174,31 +175,31 @@ def harvest(request):
     
     serializer0=BPhotoCreateSerializer(data = request.data,context={'request':request})
     # serializert=PhotoCreateSerializer(data = request.data,image=request.data.get("beforeimage"))
-    m0size=0
-    m1size=0
+    m0weight=0
+    m1weight=0
     if serializer0.is_valid():
         img0 = convert2NdArray(request.FILES['beforeimage'])
-        m0size = paPic(img0,plant.pot_ratio,plant.pot_size)
-        serializer0.save(author=request.user,plant =plant,size=m0size)
+        m0size,m0height,m0weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        serializer0.save(author=request.user,plant =plant,size=m0size,length=m0height,weight=m0weight)
     print(serializer0.data)
     print(type(serializer0.data.get("beforeimage")))
     serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
     if serializer1.is_valid():
         img1 = convert2NdArray(request.FILES['afterimage'])
-        m1size = paPic(img1,plant.pot_ratio,plant.pot_size)
-        serializer1.save(author=request.user,plant =plant,size=m1size)
+        m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
 
 
     profile= Profile.objects.get(user=request.user)
     if(plant.plant_species==0):
-        profile.depa_weight+=(m0size-m1size)
+        profile.depa_weight+=(m0weight-m1weight)
     elif(plant.plant_species==1):
-        profile.jjokpa_weight+=(m0size-m1size)
+        profile.jjokpa_weight+=(m0weight-m1weight)
     elif(plant.plant_species==2):
-        profile.onion_weight+=(m0size-m1size)
+        profile.onion_weight+=(m0weight-m1weight)
     profile.save()
     rank_update()
-    return Response({"size_dif":m0size-m1size,"money":(m0size-m1size)*(Price.objects.get(species=plant.plant_species).price)})
+    return Response({"size_dif":m0weight-m1weight,"money":int((m0weight-m1weight)*(Price.objects.get(species=plant.plant_species).price))})
     
    
 
