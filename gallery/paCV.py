@@ -58,6 +58,9 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     green_mask[pxH-potTopPixel:, :]=0
     
     #if you want to see output..2
+    newImg = cv2.bitwise_and(original, original, mask = green_mask)
+    im = Image.fromarray(newImg)
+    im.save("mask.jpeg")
     # newImg = cv2.bitwise_and(original, original, mask = green_mask)
     # cv2.imshow('AfterImg',newImg)
     # cv2.waitKey(0)
