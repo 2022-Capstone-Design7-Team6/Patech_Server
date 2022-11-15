@@ -44,7 +44,8 @@ class PhotoViewSet(viewsets.ModelViewSet):
     def perform_create(self,serializer):
         # 데이터 저장 전에 size 계산 한 뒤 투입
         print(self.request.data)
-
+        
+        
         # plant=Plant.objects.get(id=self.request.data.get('plant'))
         # img = convert2NdArray(self.request.FILES['image'])
         # msize,mheight,mweight = paImg2AHW(img,plant.plant_species,plant.pot_ratio,plant.pot_size)
@@ -57,7 +58,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
         # 사이즈 추가 필요
 
         # serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
-        
+
         serializer.save(author=self.request.user)
         print(serializer.data)
 # Create your views here.
@@ -185,16 +186,18 @@ def harvest(request):
     m0weight=0
     m1weight=0
     if serializer0.is_valid():
-        img0 = convert2NdArray(request.FILES['beforeimage'])
-        m0size,m0height,m0weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        serializer0.save(author=request.user,plant =plant,size=m0size,length=m0height,weight=m0weight)
+        # img0 = convert2NdArray(request.FILES['beforeimage'])
+        # m0size,m0height,m0weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        # serializer0.save(author=request.user,plant =plant,size=m0size,length=m0height,weight=m0weight)
+        serializer0.save(author=request.user,plant =plant)
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
     serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
     if serializer1.is_valid():
-        img1 = convert2NdArray(request.FILES['afterimage'])
-        m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
+        # img1 = convert2NdArray(request.FILES['afterimage'])
+        # m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        # serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
+        serializer1.save(author=request.user,plant =plant)
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
 
