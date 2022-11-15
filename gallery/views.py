@@ -167,8 +167,8 @@ def plantnamecheck(request):
         return Response(status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def getphotos(request):
-    photos = Photo.objects.filter(plant=request.data.get('plant')).order_by("-date")[:5]
+def getphotos(request,plant_id):
+    photos = Photo.objects.filter(plant=plant_id).order_by("-date")[:5]
     serializer_image = SimplePhotoSerializer(photos,many=True,context={'request':request})
     return Response({"photolist":serializer_image.data})
 
@@ -216,8 +216,7 @@ def harvest(request):
 
 class PlantPageAPIVIEW(APIView):
     permission_classes = [IsOwner]
-    def get(self,request):
-        plant_id = request.data.get("plant")
+    def get(self,request,plant_id):        
         plant = Plant.objects.get(pk=plant_id)
         self.check_object_permissions(self.request, plant)
         print(plant)
