@@ -44,16 +44,21 @@ class PhotoViewSet(viewsets.ModelViewSet):
     def perform_create(self,serializer):
         # 데이터 저장 전에 size 계산 한 뒤 투입
         print(self.request.data)
-        plant=Plant.objects.get(id=self.request.data.get('plant'))
-        img = convert2NdArray(self.request.FILES['image'])
-        msize,mheight,mweight = paImg2AHW(img,plant.plant_species,plant.pot_ratio,plant.pot_size)
+
+        # plant=Plant.objects.get(id=self.request.data.get('plant'))
+        # img = convert2NdArray(self.request.FILES['image'])
+        # msize,mheight,mweight = paImg2AHW(img,plant.plant_species,plant.pot_ratio,plant.pot_size)
+
         # 수확 예정 정보 계산 필요 
         # plant 값 update;
         # 수확 했을 경우에는 
         # user.profile 값 변경
         change = 0
         # 사이즈 추가 필요
-        serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
+
+        # serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
+        
+        serializer.save(author=self.request.user)
         print(serializer.data)
 # Create your views here.
 import requests

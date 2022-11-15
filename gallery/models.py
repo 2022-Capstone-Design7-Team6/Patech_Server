@@ -21,7 +21,7 @@ class Plant(models.Model):
 class Photo(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True) # 작성자
     plant = models.ForeignKey(Plant,on_delete=models.CASCADE,related_name = 'plants') # 식물 정보
-    image = models.ImageField(upload_to ='post/',default='default.jpg') # 사진 
+    image = models.ImageField(upload_to ='post/',null=True) # 사진 
     text = models.CharField(max_length=200,null=True) # 문자
     date = models.DateTimeField(default=timezone.now) # 날짜
     event = models.IntegerField(null=True) # 이벤트 100 물주기,010 수확,001 분갈이
