@@ -162,7 +162,7 @@ def plantnamecheck(request):
 def getphotos(request):
     photos = Photo.objects.filter(plant=request.data.get('plant')).order_by("-date")[:5]
     serializer_image = SimplePhotoSerializer(photos,many=True,context={'request':request})
-    return Response(serializer_image.data)
+    return Response({"photolist":serializer_image.data})
 
 
 @api_view(['POST'])
