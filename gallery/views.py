@@ -137,7 +137,7 @@ def set_price():
 def homepage(request):
     profile = Profile.objects.get(user=request.user)
     serializer_profile = ProfileSerializer(profile)
-    sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc limit 5'
+    sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date, id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
     images = Photo.objects.raw(sql)
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
     #대파가격/쪽파가격
@@ -159,7 +159,7 @@ def cvtmoney(money):
 
 @api_view(['GET'])
 def plantlist(request):
-    sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date,author_id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
+    sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date, id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
     images = Photo.objects.raw(sql)
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
     return Response(serializer_image.data)
