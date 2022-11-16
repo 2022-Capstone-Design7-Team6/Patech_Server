@@ -3,10 +3,12 @@ from rest_framework import viewsets,status
 from users.models import Profile
 from .models import Plant, Photo, Price
 from .permissions import CustomOnly,IsOwner
+from backend.settings import BASE_DIR,BASE_URL
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
         PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer,\
             SimplePhotoSerializer, PlantPage_PlantSerializer
+from urllib import parse
 
 from .paCV import paImg2AHW,convert2NdArray
 from rest_framework.views    import APIView
@@ -14,9 +16,10 @@ from rest_framework.authtoken.models  import Token
 
 from rest_framework.decorators import api_view,permission_classes
 from users.serializers import ProfileSerializer,RankProfileSerializer
-
+import os
 from rest_framework.response import Response
 from datetime import datetime,timedelta
+
 
 
 class PlantViewSet(viewsets.ModelViewSet):
@@ -182,38 +185,40 @@ def harvest(request):
 
     
     serializer0=BPhotoCreateSerializer(data = request.data,context={'request':request})
-    m0weight=0
-    m1weight=0
+    weight_before=0
+    weight_after=0
     if serializer0.is_valid():
-        # img0 = convert2NdArray(request.FILES['beforeimage'])
-        # m0size,m0height,m0weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        # serializer0.save(author=request.user,plant =plant,size=m0size,length=m0height,weight=m0weight)
-        serializer0.save(author=request.user,plant =plant)
+        photo=serializer0.save(author=request.user,plant =plant)
+        img0 = convert2NdArray(parse.unquote(serializer0.data.get("beforeimage").replace(BASE_URL,"")))
+        photo.size,photo.length,photo.weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        weight_before=photo.weight
+        photo.save()
+
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
+
     serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
     if serializer1.is_valid():
-        # img1 = convert2NdArray(request.FILES['afterimage'])
-        # m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        # serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
         photo=serializer1.save(author=request.user,plant =plant)
-        # img1 = convert2NdArray(serializer1.data.get("afterimage"))
-        # m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        photo.size=21
+        img1 = convert2NdArray(parse.unquote(serializer1.data.get("afterimage").replace(BASE_URL,"")))
+        photo.size,photo.length,photo.weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        weight_after=photo.weight
         photo.save()
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
 
+
+    diff = weight_before-weight_after
     profile= Profile.objects.get(user=request.user)
     if(plant.plant_species==0):
-        profile.depa_weight+=(m0weight-m1weight)
+        profile.depa_weight+=(diff)
     elif(plant.plant_species==1):
-        profile.jjokpa_weight+=(m0weight-m1weight)
+        profile.jjokpa_weight+=(diff)
     elif(plant.plant_species==2):
-        profile.onion_weight+=(m0weight-m1weight)
+        profile.onion_weight+=(diff)
     profile.save()
     rank_update()
-    return Response({"size_dif":m0weight-m1weight,"money":int((m0weight-m1weight)*(Price.objects.get(species=plant.plant_species).price))},status=status.HTTP_200_OK)
+    return Response({"size_dif":weight_before-weight_after,"money":int((weight_before-weight_after)*(Price.objects.get(species=plant.plant_species).price))},status=status.HTTP_200_OK)
     
    
 

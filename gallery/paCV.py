@@ -10,13 +10,12 @@ from datetime import datetime
 #4. 사진은 항상 세로로 (높이가 길게) 찍는다
 import base64
 import os
-def convert2NdArray(f):  #change type to ndarray and dtype is np.uint8  !!!타입을 알아야함
 
+def convert2NdArray(path):  #change type to ndarray and dtype is np.uint8  !!!타입을 알아야함
 
-    myfile = f.read()
-    imageBGR = cv2.imdecode(np.frombuffer(myfile , np.uint8), cv2.IMREAD_UNCHANGED)
+    img = Image.open(path)
 
-    return imageBGR
+    return np.array(img)
 
 #상태 : 업그레이드 중 두께 가중치 추가?
 #기능 : 파 넓이 계산

@@ -65,7 +65,7 @@ class PhotoSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Photo
-        fields = ("pk","plant","image","event","text","date","size","length","weight") 
+        fields = "__all__" 
 
 class SimplePhotoSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)
@@ -81,7 +81,7 @@ class PhotoCreateSerializer(serializers.ModelSerializer):
     plant= PlantSerializer(read_only=True)
     class Meta:
         model = Photo
-        fields = ("plant","image","text","event","date","size","length","weight")
+        fields = ("plant","image","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
 
 
 class BPhotoCreateSerializer(serializers.ModelSerializer):
@@ -91,7 +91,7 @@ class BPhotoCreateSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Photo
-        fields = ("plant","beforeimage","text","event","date","size","length","weight")
+        fields = ("plant","beforeimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
 
 class APhotoCreateSerializer(serializers.ModelSerializer):
     plant = PlantSerializer(read_only=True)
@@ -100,14 +100,14 @@ class APhotoCreateSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Photo
-        fields = ("plant","afterimage","text","event","date","size","length","weight")
+        fields = ("plant","afterimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
 
 
 class PhotoTimelineSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)
     class Meta:
         model = Photo
-        fields = ("pk","image","event","text","date") 
+        fields = ("pk","image","event_water","event_harvest","event_chgpot","text","date") 
 
 
 class HomePage_PlantSerializer(serializers.ModelSerializer):
@@ -141,7 +141,7 @@ class RecentPlantSerializer(serializers.ModelSerializer):
 class GraphSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photo
-        fields = ("date","size","length","weight","event")
+        fields = ("date","size","length","weight","event_water","event_harvest","event_chgpot")
 
 
 # 가장 최근 식물 2개
