@@ -61,9 +61,12 @@ class PhotoViewSet(viewsets.ModelViewSet):
         # 사이즈 추가 필요
 
         # serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
-
-        serializer.save(author=self.request.user)
-        print(serializer.data)
+        plant=Plant.objects.get(id=self.request.data.get('plant'))
+        photo = serializer.save(author=self.request.user)
+        img0 = convert2NdArray(parse.unquote(serializer.data.get("image").replace(BASE_URL,"")))
+        photo.size,photo.length,photo.weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        print(photo.size,photo.length,photo.weight )
+        photo.save()
 # Create your views here.
 import requests
 import json
@@ -242,7 +245,7 @@ class PatechRank(APIView):
         user_profile = Profile.objects.get(user=request.user)
         serializer_user_profiles =RankProfileSerializer(user_profile)
         serializer_price = PriceSerializer(Price.objects.all(), many=True)
-        return Response({'user':serializer_user_profiles.data,'price':serializer_price.data,'list':serializer_profiles.data})
+        return Response({'patech_indicator':cvtmoney(user_profile.total_gain),'user':serializer_user_profiles.data,'price':serializer_price.data,'list':serializer_profiles.data})
 
 
 # 가장 최근 식물 2개
