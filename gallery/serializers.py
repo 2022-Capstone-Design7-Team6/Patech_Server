@@ -119,6 +119,19 @@ class HomePage_PlantSerializer(serializers.ModelSerializer):
     def CalDate(self,obj):
         return (timezone.now()-obj.start_date).days 
 
+
+class PlantPage_PlantSerializer(serializers.ModelSerializer):
+
+    start_date = serializers.SerializerMethodField(method_name='removetime')
+    d_day= serializers.SerializerMethodField(method_name="CalDate")
+    class Meta:
+        model = Plant
+        fields = ("pk","plant_name","plant_species","start_date","d_day","harvest_date") 
+    def CalDate(self,obj):
+        return (timezone.now()-obj.start_date).days 
+    def removetime(self, obj):
+      return obj.start_date.date() 
+
 class RecentPlantSerializer(serializers.ModelSerializer):
     plant = HomePage_PlantSerializer(read_only=True)
     class Meta:

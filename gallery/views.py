@@ -1,12 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets
+from rest_framework import viewsets,status
 from users.models import Profile
 from .models import Plant, Photo, Price
 from .permissions import CustomOnly,IsOwner
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
         PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer,\
-            SimplePhotoSerializer
+            SimplePhotoSerializer, PlantPage_PlantSerializer
 
 from .paCV import paImg2AHW,convert2NdArray
 from rest_framework.views    import APIView
@@ -157,7 +157,10 @@ def plantlist(request):
     images = Photo.objects.raw(sql)
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
     return Response(serializer_image.data)
-from rest_framework import status
+
+
+
+
 @api_view(['GET'])
 def plantnamecheck(request):
     true_check = Plant.objects.filter(author=request.user).filter(plant_name=request.data.get("plant_name"))
@@ -177,12 +180,8 @@ def getphotos(request,plant_id):
 def harvest(request):
     plant=Plant.objects.get(id=request.data.get('plant'))
 
-    # print("still working")
-    # img0 = convert2NdArray(request.FILES['beforeimage'])
-    # m0size = paPic(img0,plant.pot_ratio,plant.pot_size)
     
     serializer0=BPhotoCreateSerializer(data = request.data,context={'request':request})
-    # serializert=PhotoCreateSerializer(data = request.data,image=request.data.get("beforeimage"))
     m0weight=0
     m1weight=0
     if serializer0.is_valid():
@@ -197,7 +196,11 @@ def harvest(request):
         # img1 = convert2NdArray(request.FILES['afterimage'])
         # m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
         # serializer1.save(author=request.user,plant =plant,size=m1size,length=m1height,weight=m1weight)
-        serializer1.save(author=request.user,plant =plant)
+        photo=serializer1.save(author=request.user,plant =plant)
+        # img1 = convert2NdArray(serializer1.data.get("afterimage"))
+        # m1size,m1height,m1weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        photo.size=21
+        photo.save()
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -221,7 +224,7 @@ class PlantPageAPIVIEW(APIView):
         self.check_object_permissions(self.request, plant)
         print(plant)
         photos = Photo.objects.filter(plant=plant_id)
-        serializer_plant = HomePage_PlantSerializer(plant)
+        serializer_plant = PlantPage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
         serializer_timeline= PhotoTimelineSerializer(photos,many=True,context={'request':request})
         return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
