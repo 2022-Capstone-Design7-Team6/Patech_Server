@@ -159,10 +159,11 @@ def cvtmoney(money):
 
 @api_view(['GET'])
 def plantlist(request):
-    sql='select gallery_photo.* from gallery_photo inner join (select max(date) as date, id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) as b on gallery_photo.date = b.date order by date desc'
+    sql='select * from gallery_photo as A join (select max(date) as maxdate, id from gallery_photo where author_id = '+str(request.user.pk)+' group by plant_id ) \
+        as b on A.date = b.maxdate and A.id = B.id order by date desc'
     images = Photo.objects.raw(sql)
-    serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
-    return Response(serializer_image.data)
+    serializer_image =RecentPlantSerializer(images,many=True,context={'request':request})
+    return Response({"plantlist":serializer_image.data})
 
 
 

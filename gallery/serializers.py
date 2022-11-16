@@ -138,6 +138,8 @@ class RecentPlantSerializer(serializers.ModelSerializer):
         model = Photo
         fields = ("pk","plant","image",)
 
+
+
 class GraphSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photo

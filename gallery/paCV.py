@@ -21,8 +21,13 @@ def convert2NdArray(path):  #change type to ndarray and dtype is np.uint8  !!!�
 #기능 : 파 넓이 계산
 #입력 : image=ndarray , pakind=종류(대파=0,쪽파=1,양파=2) ,ratio=0~1, potTopCentimeter=cm
 #출력 : [넓이(cm^2), 높이(cm), 무게(g)]
+
 def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨위 위치의 위로 파란색부분을 찾아 넓이계산
-    area2weight = [0.02,0.01,0.01]#대파, 쪽파, 양파
+    wantToReturnOutputImg = True
+    #테스트용 데이터
+
+    area2weight = [0.35385/2,0.016667/2,0.013846/2]#대파, 쪽파, 양파
+    # area2weight = [0.35385,0.16667,0.13846]#대파, 쪽파, 양파
     pxH = len(img)
     pxW = len(img[0])
     potTopPixel =int(pxH*ratio)
@@ -30,44 +35,46 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     #HSV로 진행. H가 색깔, S가 채도(높으면 선명해짐), V가 명도(낮으면 어두어짐)
     
     #if you want to see output..1
-    original = img 
+    if wantToReturnOutputImg:
+        original = img 
     
     newImg = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    #명도 high case 
-    lower_green = (30, 25, 25)
-    upper_green = (90, 120, 255)
+    #S too high case
+    lower_green = (25, 200, 5)
+    upper_green = (97, 255, 100)
     green_mask = cv2.inRange(newImg, lower_green, upper_green)
-    #채도 high case
-    lower_green = (30, 25, 25)
-    upper_green = (90, 255, 120)
+    #S high case
+    lower_green = (20, 80, 24)
+    upper_green = (90, 255, 255)
     green_mask2 = cv2.inRange(newImg, lower_green, upper_green)
-    #색조 high case
-    lower_green = (90, 50, 120)
-    upper_green = (95, 70, 170)
+    #S mid case
+    lower_green = (30, 40, 20)
+    upper_green = (90, 80, 255)  #90 이상 재정의 
     green_mask3 = cv2.inRange(newImg, lower_green, upper_green)
-    #색조 low case
-    lower_green = (20, 40, 40)
-    upper_green = (30, 150, 150)
+    #S mid and H high case
+    lower_green = (90, 45, 130)
+    upper_green = (95, 70, 255)  
     green_mask4 = cv2.inRange(newImg, lower_green, upper_green)
+    #S low case
+    lower_green = (45, 20, 50) # 20이였는데 일단 50
+    upper_green = (89, 50, 255)
+    green_mask5 = cv2.inRange(newImg, lower_green, upper_green)
     
     #여러케이스를 합함
-    green_mask=green_mask+green_mask2+green_mask3+green_mask4
+    green_mask=green_mask+green_mask2+green_mask3+green_mask4+green_mask5
 
     #top 아래는 모두 0으로 바꿈
     green_mask[pxH-potTopPixel:, :]=0
     
     #if you want to see output..2
-    # newImg = cv2.bitwise_and(original, original, mask = green_mask)
-    # cv2.imshow('AfterImg',newImg)
-    # cv2.waitKey(0)
-    newImg = cv2.bitwise_and(original, original, mask = green_mask)
-    newImg = newImg[...,::-1]
-    im = Image.fromarray(newImg)
-    output_path = "mask/"+datetime.now().strftime('%Y-%m-%d%H%M%S')+".jpeg"
-    if os.path.exists(output_path):  #동일한 파일명이 존재할 때
-         output_path = "mask/"+datetime.now().strftime('%Y-%m-%d%H%M%S')+"(1).jpeg"
-    im.save(output_path)
-
+    if wantToReturnOutputImg:
+        newImg = cv2.bitwise_and(original, original, mask = green_mask)
+        newImg = newImg[...,::-1]
+        im = Image.fromarray(newImg)
+        output_path = "mask/"+datetime.now().strftime('%Y-%m-%d%H%M%S')+".jpeg"
+        if os.path.exists(output_path):  #동일한 파일명이 존재할 때
+            output_path = "mask/"+datetime.now().strftime('%Y-%m-%d%H%M%S')+"(1).jpeg"
+        im.save(output_path)
     
     #calculate area ,height, weight
     countGreenPixel=0
@@ -90,7 +97,10 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     
     
     
-    
+    #if you want to see output..3
+    # if wantToReturnOutputImg:
+    #     return [greenArea,height,weight,newImg]
+
     return [greenArea,height,weight]
     
 #상태 : 구현완료
@@ -98,7 +108,7 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
 #입력 : before_image=ndarray , after_image=ndarray , ratio=0~1, potTopCentimeter=cm
 #출력 : 두 이미지 [넓이(cm^2), 높이(cm), 무게(g)] 의 차
 def paHarvest(before_img,after_img,paType,ratio, potTopCentimeter):#수확시, 두 파사진이 동시에 왔을 때 차를 반환 완료
-    diff= [round(a - b,1) for a, b in zip(paImg2AHW(after_img,paType, ratio, potTopCentimeter), paImg2AHW(before_img,paType,ratio, potTopCentimeter) )]
+    diff= [round(a - b,1) for a, b in zip(paImg2AHW(before_img,paType, ratio, potTopCentimeter), paImg2AHW(after_img,paType,ratio, potTopCentimeter) )]
     if diff[0]<0 :
         return 'ERROR, pa is grown..'
     else :
