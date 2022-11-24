@@ -181,7 +181,7 @@ def plantlist(request):
 
 @api_view(['GET'])
 def plantnamecheck(request):
-    true_check = Plant.objects.filter(author=request.user).filter(plant_name=request.data.get("plant_name"))
+    true_check = Plant.objects.filter(author=request.user).filter(plant_name=request.GET["plant_name"])
     if true_check.exists():
         return Response(status=status.HTTP_226_IM_USED)
     else:
