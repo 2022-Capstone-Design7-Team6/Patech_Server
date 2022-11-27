@@ -52,11 +52,15 @@ class PlantSerializer(serializers.ModelSerializer):
         model = Plant
         fields = ("pk","plant_name","plant_species","start_date","water_date","harvest_date","pot_size","pot_ratio") 
 
-class PlantCreateSerializer(serializers.ModelSerializer):
 
+
+class PlantCreateSerializer(serializers.ModelSerializer):
+    pot_image = Base64ImageField(
+        max_length=None, use_url=True, required=False
+    )
     class Meta:
         model = Plant
-        fields = ("plant_name","plant_species","start_date","water_date","pot_size","pot_ratio") 
+        fields = ("plant_name","plant_species","start_date","water_date","pot_image","pot_size","pot_ratio") 
 
 class PhotoSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)
@@ -84,23 +88,26 @@ class PhotoCreateSerializer(serializers.ModelSerializer):
         fields = ("plant","image","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
 
 
-class BPhotoCreateSerializer(serializers.ModelSerializer):
+class HPhotoCreateSerializer(serializers.ModelSerializer):
     plant = PlantSerializer(read_only=True)
     beforeimage = Base64ImageField(
-        max_length=None, use_url=True, required=False,source="image"
+        max_length=None, use_url=True, required=False
     )
-    class Meta:
-        model = Photo
-        fields = ("plant","beforeimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
-
-class APhotoCreateSerializer(serializers.ModelSerializer):
-    plant = PlantSerializer(read_only=True)
     afterimage = Base64ImageField(
         max_length=None, use_url=True, required=False,source="image"
     )
     class Meta:
         model = Photo
-        fields = ("plant","afterimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
+        fields = ("plant","afterimage","beforeimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
+
+# class APhotoCreateSerializer(serializers.ModelSerializer):
+#     plant = PlantSerializer(read_only=True)
+#     afterimage = Base64ImageField(
+#         max_length=None, use_url=True, required=False,source="image"
+#     )
+#     class Meta:
+#         model = Photo
+#         fields = ("plant","afterimage","text","event_water","event_harvest","event_chgpot","date","size","length","weight")
 
 
 class PhotoTimelineSerializer(serializers.ModelSerializer):

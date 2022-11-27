@@ -8,7 +8,7 @@ from rest_framework.validators import UniqueValidator
 #유저모델
 class RegisterSerializer(serializers.ModelSerializer):
     
-    username = serializers.CharField(
+    email = serializers.CharField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
@@ -21,12 +21,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id','username','password')
+        fields = ('id','username','password','email')
 
 
     def create(self,validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
+            email=validated_data['email'],
         )
         user.set_password(validated_data['password'])
         user.save()

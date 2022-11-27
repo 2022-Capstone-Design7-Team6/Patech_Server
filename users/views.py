@@ -26,3 +26,5 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     queryset = Profile.objects.all()
     filter_backends = [DjangoFilterBackend]
     serializer_class = ProfileSerializer
+
+

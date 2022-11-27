@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-=cpgr=v)5=^zzojle_7azdvshh2lb9-qk!!f!0hr6un$q^7uz#
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Application definition
 
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'gallery',
     'django_filters',
     'django_crontab',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 REST_FRAMEWORK = {

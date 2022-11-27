@@ -6,7 +6,7 @@ from .permissions import CustomOnly,IsOwner
 from backend.settings import BASE_DIR,BASE_URL
 from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,PhotoCreateSerializer,\
     RecentPlantSerializer, GraphSerializer, HomePage_PlantSerializer,\
-        PhotoTimelineSerializer,PriceSerializer,APhotoCreateSerializer,BPhotoCreateSerializer,\
+        PhotoTimelineSerializer,PriceSerializer,HPhotoCreateSerializer,\
             SimplePhotoSerializer, PlantPage_PlantSerializer
 from urllib import parse
 
@@ -181,7 +181,15 @@ def plantlist(request):
 
 @api_view(['GET'])
 def plantnamecheck(request):
-    true_check = Plant.objects.filter(author=request.user).filter(plant_name=request.GET["plant_name"])
+    true_check = Plant.objects.filter(author=request.user,plant_name=request.GET["plant_name"])
+    if true_check.exists():
+        return Response(status=status.HTTP_226_IM_USED)
+    else:
+        return Response(status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def nicknamecheck(request):
+    true_check = Profile.objects.filter(nickname=request.GET["nickname"])
     if true_check.exists():
         return Response(status=status.HTTP_226_IM_USED)
     else:
@@ -189,9 +197,10 @@ def plantnamecheck(request):
 
 @api_view(['GET'])
 def getphotos(request,plant_id):
-    photos = Photo.objects.filter(plant=plant_id).order_by("-date")[:5]
+    photos = Photo.objects.filter(plant=plant_id,image__isnull=False).order_by("-date")[:5]
     serializer_image = SimplePhotoSerializer(photos,many=True,context={'request':request})
     return Response({"photolist":serializer_image.data})
+
 
 
 @api_view(['POST'])
@@ -199,28 +208,36 @@ def harvest(request):
     plant=Plant.objects.get(id=request.data.get('plant'))
 
     
-    serializer0=BPhotoCreateSerializer(data = request.data,context={'request':request})
+    serializer0=HPhotoCreateSerializer(data = request.data,context={'request':request})
     weight_before=0
     weight_after=0
     if serializer0.is_valid():
-        photo=serializer0.save(author=request.user,plant =plant)
+        photo=serializer0.save(author=request.user,plant =plant,event_harvest=1)
+        #이전사진 무게
         img0 = convert2NdArray(parse.unquote(serializer0.data.get("beforeimage").replace(BASE_URL,"")))
-        photo.size,photo.length,photo.weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        photo.size,photo.length,photo.weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)        
+        photo.save()
         weight_before=photo.weight
-        photo.save()
+
+        
+        img1 = convert2NdArray(parse.unquote(serializer0.data.get("afterimage").replace(BASE_URL,"")))
+        size,length,weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+        photo_dummy=Photo(author=request.user,plant=plant,size=size,length=length,weight=weight)
+        photo_dummy.save()  
+        weight_after=weight
 
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
 
-    serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
-    if serializer1.is_valid():
-        photo=serializer1.save(author=request.user,plant =plant)
-        img1 = convert2NdArray(parse.unquote(serializer1.data.get("afterimage").replace(BASE_URL,"")))
-        photo.size,photo.length,photo.weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        weight_after=photo.weight
-        photo.save()
-    else:
-        Response(status=status.HTTP_204_NO_CONTENT)
+    # serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
+    # if serializer1.is_valid():
+    #     photo=serializer1.save(author=request.user,plant =plant)
+    #     img1 = convert2NdArray(parse.unquote(serializer1.data.get("afterimage").replace(BASE_URL,"")))
+    #     photo.size,photo.length,photo.weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
+    #     weight_after=photo.weight
+    #     photo.save()
+    # else:
+    #     Response(status=status.HTTP_204_NO_CONTENT)
 
 
     diff = weight_before-weight_after
@@ -246,7 +263,7 @@ class PlantPageAPIVIEW(APIView):
         photos = Photo.objects.filter(plant=plant_id)
         serializer_plant = PlantPage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
-        serializer_timeline= PhotoTimelineSerializer(photos,many=True,context={'request':request})
+        serializer_timeline= PhotoTimelineSerializer(photos.filter(image__isnull=False),many=True,context={'request':request})
         return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
 
 class PatechRank(APIView):
@@ -258,6 +275,7 @@ class PatechRank(APIView):
         serializer_user_profiles =RankProfileSerializer(user_profile)
         serializer_price = PriceSerializer(Price.objects.all(), many=True)
         return Response({'patech_indicator':cvtmoney(user_profile.total_gain),'user':serializer_user_profiles.data,'price':serializer_price.data,'list':serializer_profiles.data})
+
 
 
 # 가장 최근 식물 2개
