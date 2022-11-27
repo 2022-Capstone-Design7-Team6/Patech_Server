@@ -197,7 +197,7 @@ def nicknamecheck(request):
 
 @api_view(['GET'])
 def getphotos(request,plant_id):
-    photos = Photo.objects.filter(plant=plant_id,image__isnull=False).order_by("-date")[:5]
+    photos = Photo.objects.filter(plant=plant_id,image__isnull=False,image__gt="" ).order_by("-date")[:5]
     serializer_image = SimplePhotoSerializer(photos,many=True,context={'request':request})
     return Response({"photolist":serializer_image.data})
 
@@ -263,7 +263,7 @@ class PlantPageAPIVIEW(APIView):
         photos = Photo.objects.filter(plant=plant_id)
         serializer_plant = PlantPage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
-        serializer_timeline= PhotoTimelineSerializer(photos.filter(image__isnull=False),many=True,context={'request':request})
+        serializer_timeline= PhotoTimelineSerializer(photos.exclude(image__isnull=True).exclude(image=""),many=True,context={'request':request})
         return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
 
 class PatechRank(APIView):
