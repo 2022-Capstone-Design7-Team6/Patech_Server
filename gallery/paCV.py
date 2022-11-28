@@ -26,8 +26,8 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     wantToReturnOutputImg = True
     #테스트용 데이터
 
-    area2weight = [0.35385/2,0.016667/2,0.013846/2]#대파, 쪽파, 양파
-    # area2weight = [0.35385,0.16667,0.13846]#대파, 쪽파, 양파
+    # area2weight = [0.035385/2,0.016667/2,0.013846/2]#대파, 쪽파, 양파
+    area2weight = [0.35385,0.16667,0.13846]#대파, 쪽파, 양파
     pxH = len(img)
     pxW = len(img[0])
     potTopPixel =int(pxH*ratio)

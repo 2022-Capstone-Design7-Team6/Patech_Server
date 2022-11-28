@@ -74,9 +74,9 @@ import json
 def rank_update():
     profiles = Profile.objects.all()
     for profile in profiles:
-        profile.total_gain=int(profile.depa_weight*Price.objects.get(species=0).price\
-            +profile.jjokpa_weight*Price.objects.get(species=1).price\
-                +profile.onion_weight*Price.objects.get(species=2).price)
+        profile.total_gain=int(profile.depa_weight*Price.objects.get(species=0).price/1000\
+            +profile.jjokpa_weight*Price.objects.get(species=1).price/1000\
+                +profile.onion_weight*Price.objects.get(species=2).price/1000)
 
     profiles = sorted(profiles, key= lambda x: x.total_gain,reverse=True)
     for i,profile in enumerate(profiles,start=1):

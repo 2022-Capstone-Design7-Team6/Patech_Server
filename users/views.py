@@ -9,12 +9,26 @@ class RegisterView(generics.CreateAPIView):
     queryset= User.objects.all()
     serializer_class= RegisterSerializer
 
+    def post(self,request):
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=False)
+            print(serializer.get_uniqueness_extra_kwargs)
+            serializer.save()
+        except:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        return Response(status=status.HTTP_200_OK)
+
+
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     
     def post(self,request):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except:
+            return Response(status=status.HTTP_403_FORBIDDEN)
         token = serializer.validated_data
         return Response({"pk":token.user_id,"token": token.key},status=status.HTTP_200_OK)
 
@@ -26,5 +40,13 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     queryset = Profile.objects.all()
     filter_backends = [DjangoFilterBackend]
     serializer_class = ProfileSerializer
-
+    
+@api_view(['PUT'])
+def chgnickname(request):
+    profile=Profile.objects.get(user=request.user)
+    if Profile.objects.exclude(user=request.user).filter(nickname=request.data.get('nickname')).exists():
+        return Response(status=status.HTTP_403_FORBIDDEN)
+    profile.nickname=request.data.get('nickname')
+    profile.save()
+    return Response(status=status.HTTP_200_OK)
 
