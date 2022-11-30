@@ -47,6 +47,9 @@ class PriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Price
         fields = ("species", "price","date")
+
+
+
 class PlantSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -61,7 +64,7 @@ class PlantCreateSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Plant
-        fields = ("plant_name","plant_species","start_date","water_date","pot_image","pot_size","pot_ratio") 
+        fields = ("pk","plant_name","plant_species","start_date","water_date","pot_image","pot_size","pot_ratio") 
 
 class PhotoSerializer(serializers.ModelSerializer):
     # plant= PlantSerializer(read_only=True)
