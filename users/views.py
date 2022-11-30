@@ -14,13 +14,20 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=False)
-            print(serializer.get_uniqueness_extra_kwargs)
             user=serializer.save()
         except:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-
+            return Response({"status":status.HTTP_403_FORBIDDEN,"pk":None,"token":None,"nickname":None})
+        
         token=Token.objects.get(user=user)
-        return Response({"pk":token.user_id,"token": token.key,"status":status.HTTP_200_OK})
+        msg=status.HTTP_200_OK
+        nickname=self.request.data.get("nickname")
+        profile=Profile.objects.get(user=user)
+        if Profile.objects.exclude(user=user).filter(nickname=nickname).exists():
+            msg=status.HTTP_205_RESET_CONTENT
+        else:
+            profile.nickname=nickname
+            profile.save()
+        return Response({"status":msg,"pk":token.user_id,"token": token.key,"nickname":profile.nickname})
 
 
 class LoginView(generics.GenericAPIView):
