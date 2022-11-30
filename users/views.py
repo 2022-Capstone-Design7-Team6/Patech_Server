@@ -20,7 +20,7 @@ class RegisterView(generics.CreateAPIView):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         token=Token.objects.get(user=user)
-        return Response({"pk":token.user_id,"token": token.key},status=status.HTTP_200_OK)
+        return Response({"pk":token.user_id,"token": token.key,"status":status.HTTP_200_OK})
 
 
 class LoginView(generics.GenericAPIView):
