@@ -48,6 +48,7 @@ class PriceSerializer(serializers.ModelSerializer):
         model = Price
         fields = ("species", "price","date")
 class PlantSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Plant
         fields = ("pk","plant_name","plant_species","start_date","water_date","harvest_date","pot_size","pot_ratio") 
@@ -83,6 +84,9 @@ class SimplePhotoSerializer(serializers.ModelSerializer):
 
 class PhotoCreateSerializer(serializers.ModelSerializer):
     plant= PlantSerializer(read_only=True)
+    image = Base64ImageField(
+        max_length=None, use_url=True, required=False
+    )
     class Meta:
         model = Photo
         fields = ("plant","image","text","event_water","event_harvest","event_chgpot","date","size","length","weight")

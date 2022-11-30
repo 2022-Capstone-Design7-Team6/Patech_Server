@@ -28,10 +28,11 @@ class PlantViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['author']
     def get_serializer_class(self):
-        if self.action == 'list' or 'retrieve':
+        if self.action == 'retrieve':
             return PlantSerializer
         return PlantCreateSerializer
     def perform_create(self,serializer):
+        print(self.request.data)
         serializer.save(author=self.request.user)
 
 
