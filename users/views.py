@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
 from .permission import CustomReadOnly
+from rest_framework.authtoken.models  import Token
 class RegisterView(generics.CreateAPIView):
     queryset= User.objects.all()
     serializer_class= RegisterSerializer
@@ -14,10 +15,12 @@ class RegisterView(generics.CreateAPIView):
         try:
             serializer.is_valid(raise_exception=False)
             print(serializer.get_uniqueness_extra_kwargs)
-            serializer.save()
+            user=serializer.save()
         except:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        return Response(status=status.HTTP_200_OK)
+
+        token=Token.objects.get(user=user)
+        return Response({"pk":token.user_id,"token": token.key},status=status.HTTP_200_OK)
 
 
 class LoginView(generics.GenericAPIView):
