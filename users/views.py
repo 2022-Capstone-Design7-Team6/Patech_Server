@@ -38,9 +38,9 @@ class LoginView(generics.GenericAPIView):
         try:
             serializer.is_valid(raise_exception=True)
         except:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":status.HTTP_403_FORBIDDEN,"pk":None,"token":None})
         token = serializer.validated_data
-        return Response({"pk":token.user_id,"token": token.key},status=status.HTTP_200_OK)
+        return Response({"status":status.HTTP_200_OK,"pk":token.user_id,"token": token.key})
 
 
 from .models import Profile
