@@ -10,7 +10,7 @@ from .serializers import PlantSerializer,PlantCreateSerializer, PhotoSerializer,
             SimplePhotoSerializer, PlantPage_PlantSerializer
 from urllib import parse
 
-from .paCV import paImg2AHW,convert2NdArray
+from .paCV import paImg2AHW,convert2NdArray,harvPredict
 from rest_framework.views    import APIView
 from rest_framework.authtoken.models  import Token
 
@@ -278,7 +278,35 @@ class PatechRank(APIView):
         return Response({'patech_indicator':cvtmoney(user_profile.total_gain),'user':serializer_user_profiles.data,'price':serializer_price.data,'list':serializer_profiles.data})
 
 
+def updatehdate(plant_id):
+    PhotoList = list(Photo.objects.filter(plant=plant_id).order_by("-date"))
+    weightList=[]
+    print(PhotoList)
+    for photo in PhotoList:
+        if photo.event_harvest:
+            break        
+        weightList.insert(0,[photo.date,int(photo.weight)])
+    if len(weightList)>2:
+        print(weightList)
+        date=harvPredict(weightList)
+        print(date)
+        plant = Plant.objects.get(id=plant_id)
+        plant.harvest_date=date
+        plant.save()
 
+@api_view(['GET'])
+def calchavestdate(request):
+    updatehdate(request.GET["plant"])
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def updateallhdate(request):
+    plants = Plant.objects.all()
+    for plant in plants:
+        updatehdate(plant.id)
+    return Response(status=status.HTTP_200_OK)
+
+updateallhdate
 # 가장 최근 식물 2개
 # 최근 시세 (시세 가져온 일자, 가격)
 # user nickname
