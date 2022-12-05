@@ -13,6 +13,7 @@ class Plant(models.Model):
     start_date =models.DateTimeField(default=timezone.now) # 등록 날짜
     water_date = models.DateTimeField(null=True) # 최근 물 준 날짜
     harvest_date = models.DateTimeField(null=True) # 수확 예상 시기
+    harvest_weight = models.FloatField(default=0)#수확예상무게
     pot_image = models.ImageField(upload_to ='post/',null=True)
     pot_size = models.FloatField(default=20) # 화분 사이즈
     pot_ratio = models.FloatField(default=0.4)# 초기 화분 비율

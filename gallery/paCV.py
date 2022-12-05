@@ -124,45 +124,63 @@ def paHarvest(before_img,after_img,paType,ratio, potTopCentimeter):#수확시, �
 #출력 : 수확 시기...?
 #식물 번호 받아서 바로 값 수정하도록 변경함
 
-def harvPredict(weightList):
-    first = weightList[0][0]
-    for h in weightList:
-        h[0] = (h[0]-first).days
-
-    inputX = [ h[0] for h in weightList]
-    inputY =[ h[1] for h in weightList]
-    for xx in range(len(inputX)):
-        if inputX[xx]==0:
-            inputX[xx]+=0.01
-    for yy in range(len(inputY)):
-        if inputY[yy]==0:
-            inputY[yy]+=0.01
+def harvPredict(weightList,paType,id):
+    #최고 높이를 찾음 거기서 harvestCriteria=2? 가 작은 날을 반환.
+    #만약 최고 높이와 현재 식물의 높이가 2가 차이가 안난다고 판단되면 수확을 진행 
     #criteria of harvest
-    harvestCriteria = 2
 
-    #convert X
-    X = np.array([[he] for he in inputX])
-    minError = [0,1000000000] #minError maxWeight, minErrorValue, minError 수확날짜?!?
-    for i in range(max(inputY)+1,70):
+    harvestCriteria = 0.1
+    
+    firstDay = weightList[0][0]
+    for w in weightList:
+        w[0] = (w[0]-firstDay).days
+
+    if len(weightList)<3:
+        if (paType==0):appropriateWeight = 25 #대파
+        elif (paType==1) : appropriateWeight=10 #쪽파
+        else : appropriateWeight=10 #양파파
+        return [firstDay+timedelta(days=14),round(appropriateWeight,1)]
+
+    inputX = [ w[0] for w in weightList] #datetime
+    inputY =[ w[1] for w in weightList] #weight
+    for zero in range(len(inputX)):
+        if inputX[zero]==0:
+            inputX[zero]+=0.001
+    for zero in range(len(inputY)):
+        if inputY[zero]==0:
+            inputY[zero]+=0.001
+    
+    #convert inputX shape for regression
+    X = np.array([[dates] for dates in inputX])
+    
+    previousError = 1000000000 #previous error value
+    appropriateWeight = 0 #appropriate Weight
+    
+    curMaxWeight = max(inputY)+0.1
+    while(curMaxWeight<=70):
         tempError = 0
         #log(-y/y-1) = x 임을 이용!!!(0<y<1 이어야함)  이렇게 하면 y= 1/(1+e^-(ax+b)) 를 예측 가능!  
-        maximumWeight = i #이 값에 따라 너무 많이 바뀜.... 그럼 maxumumSize를 inputY 최대값에서부터 하나씩 ..? 늘려가면서 최대무게 측정! 
         #convert Y
-        reductY = np.divide(np.array(inputY),maximumWeight) #Later, we have to convert this. e^(logTheY) = input Y no is not......
+        reductY = np.divide(np.array(inputY),curMaxWeight) #Later, we have to convert this. e^(logTheY) = input Y no is not......
         #log(-y/(y-1)) = x
         Y = np.log(np.negative(reductY)/(reductY-1))
         model = LinearRegression()
         model.fit(X,Y)
         for i in range(len(inputX)):
             ex = math.exp(model.coef_*inputX[i]+model.intercept_)
-            tempError+= abs(ex*maximumWeight/(1+ex)-inputY[i]) #평균절대오차
-        # print(maximumWeight,tempError)
-        if tempError<minError[1]:
-            minError[1]=tempError
-            minError[0]=maximumWeight
-
-    maximumWeight = minError[0]
-    reductY = np.divide(np.array(inputY),maximumWeight)
+            tempError+= abs(ex*curMaxWeight/(1+ex)-inputY[i]) #평균절대오차
+        # print(curMaxWeight,tempError)
+        if tempError<previousError:
+            previousError=tempError
+            appropriateWeight=curMaxWeight
+        # plt.scatter(curMaxWeight,previousError,  alpha=0.3)
+        else :
+            break
+        curMaxWeight+=0.1
+    # plt.show()
+    # print("Maximum weight of this plant will be",appropriateWeight)
+    
+    reductY = np.divide(np.array(inputY),appropriateWeight)
     Y = np.log(np.negative(reductY)/(reductY-1))
     model = LinearRegression()
     model.fit(X,Y)
@@ -170,18 +188,27 @@ def harvPredict(weightList):
     #if you want to see graph
     xs = np.arange(0,50,1)
     ex =np.exp(model.coef_*xs+model.intercept_)
-    ys = ex*maximumWeight/(1+ex)
+    ys = ex*appropriateWeight/(1+ex)
     plt.scatter(inputX,inputY,  alpha=0.3)
     plt.plot(xs,ys,'r-',lw=3)
-    plt.savefig('graph.png', dpi=300)
+    plt.savefig('graph/graph'+str(id)+'.png', dpi=300)
     plt.clf()
     
-    if (minError[0]-harvestCriteria) < max(inputY):
-        harvest_date = first + timedelta(days=max(inputX))
-
+    if (appropriateWeight-harvestCriteria) < max(inputY):
+        harvest_date = firstDay + timedelta(days=max(inputX))
     else:
-        tempY = (minError[0]-harvestCriteria)/minError[0]
+        tempY = (appropriateWeight-harvestCriteria)/appropriateWeight
         tempX = (math.log(-tempY/(tempY-1))-model.intercept_)//model.coef_
-        harvest_date =  first + timedelta(days=int(tempX[0]))
-    return harvest_date
-
+        # print(tempX[0])
+        # print(inputX,inputY)
+        harvest_date =  firstDay + timedelta(days=int(tempX[0])+1)
+        
+        
+    #default
+    if ((harvest_date-firstDay).days<3):
+        harvest_date = firstDay+timedelta(days=14)
+        if (paType==0):appropriateWeight = 25 #대파
+        elif (paType==1) : appropriateWeight=10 #쪽파
+        else : appropriateWeight=10 #양파파
+        
+    return [harvest_date,round(appropriateWeight,1)]

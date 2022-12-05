@@ -48,20 +48,6 @@ class PhotoViewSet(viewsets.ModelViewSet):
     def perform_create(self,serializer):
         # 데이터 저장 전에 size 계산 한 뒤 투입
         print(self.request.data)
-        
-        
-        # plant=Plant.objects.get(id=self.request.data.get('plant'))
-        # img = convert2NdArray(self.request.FILES['image'])
-        # msize,mheight,mweight = paImg2AHW(img,plant.plant_species,plant.pot_ratio,plant.pot_size)
-
-        # 수확 예정 정보 계산 필요 
-        # plant 값 update;
-        # 수확 했을 경우에는 
-        # user.profile 값 변경
-        change = 0
-        # 사이즈 추가 필요
-
-        # serializer.save(author=self.request.user,size=msize,length=mheight,weight=mweight)
         plant=Plant.objects.get(id=self.request.data.get('plant'))
         photo = serializer.save(author=self.request.user)
         img0 = convert2NdArray(parse.unquote(serializer.data.get("image").replace(BASE_URL,"")))
@@ -147,10 +133,6 @@ def homepage(request):
         where t.rn =1 and t.image !=\'\' and t.author_id='+str(request.user.pk)+' order by date desc;'
     images = Photo.objects.raw(sql)[:5]
     serializer_image = RecentPlantSerializer(images,many=True,context={'request':request})
-    #대파가격/쪽파가격
-    # price_data0 = Price(species=0,price=1,date=datetime.today().date()) 
-    # price_data0.save()
-    # set_price()
     return Response({'nickname':profile.nickname,'patech_indicator':cvtmoney(profile.total_gain),'img_list':serializer_image.data})
 
 def cvtmoney(money):
@@ -230,17 +212,6 @@ def harvest(request):
     else:
         Response(status=status.HTTP_204_NO_CONTENT)
 
-    # serializer1=APhotoCreateSerializer(data = request.data,context={'request':request})
-    # if serializer1.is_valid():
-    #     photo=serializer1.save(author=request.user,plant =plant)
-    #     img1 = convert2NdArray(parse.unquote(serializer1.data.get("afterimage").replace(BASE_URL,"")))
-    #     photo.size,photo.length,photo.weight = paImg2AHW(img1,plant.plant_species,plant.pot_ratio,plant.pot_size)
-    #     weight_after=photo.weight
-    #     photo.save()
-    # else:
-    #     Response(status=status.HTTP_204_NO_CONTENT)
-
-
     diff = weight_before-weight_after
     profile= Profile.objects.get(user=request.user)
     if(plant.plant_species==0):
@@ -264,8 +235,19 @@ class PlantPageAPIVIEW(APIView):
         photos = Photo.objects.filter(plant=plant_id)
         serializer_plant = PlantPage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
+        graph_list=[]
+        if plant.harvest_date!= None:
+            graph_list = [{
+            "date": plant.harvest_date,
+            "size": 0,
+            "length": 0,
+            "weight": plant.harvest_weight,
+            "event_water": False,
+            "event_harvest": False,
+            "event_chgpot": False
+        }]+serializer_graph.data
         serializer_timeline= PhotoTimelineSerializer(photos.exclude(image__isnull=True).exclude(image=""),many=True,context={'request':request})
-        return Response({'plant':serializer_plant.data,'graph_list':serializer_graph.data,'time_line':serializer_timeline.data})
+        return Response({'plant':serializer_plant.data,'graph_list':graph_list,'time_line':serializer_timeline.data})
 
 class PatechRank(APIView):
     def get(self,request):
@@ -280,19 +262,20 @@ class PatechRank(APIView):
 
 def updatehdate(plant_id):
     PhotoList = list(Photo.objects.filter(plant=plant_id).order_by("-date"))
+    plant=Plant.objects.get(id=plant_id)
     weightList=[]
-    print(PhotoList)
     for photo in PhotoList:
+        weightList.insert(0,[photo.date,photo.weight])
         if photo.event_harvest:
-            break        
-        weightList.insert(0,[photo.date,int(photo.weight)])
-    if len(weightList)>2:
-        print(weightList)
-        date=harvPredict(weightList)
-        print(date)
-        plant = Plant.objects.get(id=plant_id)
-        plant.harvest_date=date
-        plant.save()
+            break   
+     
+    # if len(weightList)>2:
+    print(weightList,)
+    date, weight =harvPredict(weightList,plant.plant_species,plant_id)
+    plant = Plant.objects.get(id=plant_id)
+    plant.harvest_date=date
+    plant.harvest_weight=weight
+    plant.save()
 
 @api_view(['GET'])
 def calchavestdate(request):
@@ -306,7 +289,6 @@ def updateallhdate(request):
         updatehdate(plant.id)
     return Response(status=status.HTTP_200_OK)
 
-updateallhdate
 # 가장 최근 식물 2개
 # 최근 시세 (시세 가져온 일자, 가격)
 # user nickname
