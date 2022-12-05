@@ -32,7 +32,6 @@ class PlantViewSet(viewsets.ModelViewSet):
             return PlantSerializer
         return PlantCreateSerializer
     def perform_create(self,serializer):
-        print(self.request.data)
         serializer.save(author=self.request.user)
 
 
@@ -47,12 +46,10 @@ class PhotoViewSet(viewsets.ModelViewSet):
         return PhotoCreateSerializer
     def perform_create(self,serializer):
         # 데이터 저장 전에 size 계산 한 뒤 투입
-        print(self.request.data)
         plant=Plant.objects.get(id=self.request.data.get('plant'))
         photo = serializer.save(author=self.request.user)
         img0 = convert2NdArray(parse.unquote(serializer.data.get("image").replace(BASE_URL,"")))
         photo.size,photo.length,photo.weight = paImg2AHW(img0,plant.plant_species,plant.pot_ratio,plant.pot_size)
-        print(photo.size,photo.length,photo.weight )
         photo.save()
 # Create your views here.
 import requests
@@ -231,7 +228,6 @@ class PlantPageAPIVIEW(APIView):
     def get(self,request,plant_id):        
         plant = Plant.objects.get(pk=plant_id)
         self.check_object_permissions(self.request, plant)
-        print(plant)
         photos = Photo.objects.filter(plant=plant_id)
         serializer_plant = PlantPage_PlantSerializer(plant)
         serializer_graph = GraphSerializer(photos,many=True)
@@ -265,17 +261,17 @@ def updatehdate(plant_id):
     plant=Plant.objects.get(id=plant_id)
     weightList=[]
     for photo in PhotoList:
-        weightList.insert(0,[photo.date,photo.weight])
         if photo.event_harvest:
             break   
+        weightList.insert(0,[photo.date,photo.weight])
      
     # if len(weightList)>2:
-    print(weightList,)
-    date, weight =harvPredict(weightList,plant.plant_species,plant_id)
-    plant = Plant.objects.get(id=plant_id)
-    plant.harvest_date=date
-    plant.harvest_weight=weight
-    plant.save()
+    if len(weightList)>1:
+        date, weight =harvPredict(weightList,plant.plant_species,plant_id)
+        plant = Plant.objects.get(id=plant_id)
+        plant.harvest_date=date
+        plant.harvest_weight=weight
+        plant.save()
 
 @api_view(['GET'])
 def calchavestdate(request):
