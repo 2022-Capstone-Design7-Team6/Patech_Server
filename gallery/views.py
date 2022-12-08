@@ -133,11 +133,11 @@ def homepage(request):
     return Response({'nickname':profile.nickname,'patech_indicator':cvtmoney(profile.total_gain),'img_list':serializer_image.data})
 
 def cvtmoney(money):
-    item_list=['-','교통비🚃','붕어빵⛄️','아메리카노 1잔☕️','참치김밥🐟',\
+    item_list=['-','컵라면 1개🍜','교통비🚃','붕어빵⛄️','아메리카노 1잔☕️','참치김밥🐟',\
     '햄버거 세트🍔','떡볶이 1인분🍽','영화 티켓🎟','치킨 1마리🍗','한우 1인분🥩',\
         '제주도행 비행기표✈️','에어팟 맥스🎧','맥북 프로💻']
     
-    price_list=[0,1200,3000,4000,5000,7000,10000,14000,20000,30000,70000,690000,2500000]
+    price_list=[0,900,1200,3000,4000,5000,7000,10000,14000,20000,30000,70000,690000,2500000]
     for i,price in enumerate(price_list,start=-1):
         if money<price:
             return item_list[i]
@@ -219,7 +219,7 @@ def harvest(request):
         profile.onion_weight+=(diff)
     profile.save()
     rank_update()
-    return Response({"size_dif":weight_before-weight_after,"money":int((weight_before-weight_after)*(Price.objects.get(species=plant.plant_species).price))},status=status.HTTP_200_OK)
+    return Response({"size_dif":weight_before-weight_after,"money":int((weight_before-weight_after)*(Price.objects.get(species=plant.plant_species).price/1000))},status=status.HTTP_200_OK)
     
    
 

@@ -73,7 +73,7 @@ def paImg2AHW(img,paType, ratio,topCentimeter):#파사진을 찍었을 때 맨�
     #if you want to see output..2
     if wantToReturnOutputImg:
         newImg = cv2.bitwise_and(original, original, mask = green_mask)
-        newImg = newImg[...,::-1]
+        newImg = newImg[...,::-1]   
         im = Image.fromarray(newImg)
         output_path = "mask/"+datetime.now().strftime('%Y-%m-%d%H%M%S')+".jpeg"
         if os.path.exists(output_path):  #동일한 파일명이 존재할 때
@@ -185,14 +185,6 @@ def harvPredict(weightList,paType,id):
     model = LinearRegression()
     model.fit(X,Y)
 
-    #if you want to see graph
-    xs = np.arange(0,50,1)
-    ex =np.exp(model.coef_*xs+model.intercept_)
-    ys = ex*appropriateWeight/(1+ex)
-    plt.scatter(inputX,inputY,  alpha=0.3)
-    plt.plot(xs,ys,'r-',lw=3)
-    plt.savefig('graph/graph'+str(id)+'.png', dpi=300)
-    plt.clf()
     
     if (appropriateWeight-harvestCriteria) < max(inputY):
         harvest_date = firstDay + timedelta(days=max(inputX))
@@ -210,5 +202,15 @@ def harvPredict(weightList,paType,id):
         if (paType==0):appropriateWeight = 25 #대파
         elif (paType==1) : appropriateWeight=10 #쪽파
         else : appropriateWeight=10 #양파파
-        
+    
+    #if you want to see graph
+    xs = np.arange(0,50,1)
+    ex =np.exp(model.coef_*xs+model.intercept_)
+    ys = ex*appropriateWeight/(1+ex)
+    plt.scatter(inputX,inputY,  alpha=0.3)
+    plt.scatter(tempX,appropriateWeight,color='green')
+    plt.plot(xs,ys,'r-',lw=3)
+    plt.savefig('graph/graph'+str(id)+'.png', dpi=300)
+    plt.clf()
+
     return [harvest_date,round(appropriateWeight,1)]
